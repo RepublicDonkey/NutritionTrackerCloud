@@ -83,3 +83,20 @@ a {
 a:hover {
     text-decoration: underline;
 }
+.error-box {
+    width: 450px;
+    margin: 20px auto;
+    background-color: #ffe6e6;
+    color: #b00020;
+    border: 1px solid #ffb3b3;
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0px 0px 8px rgba(0,0,0,0.1);
+}
+
+.error-box p {
+    margin: 5px 0;
+    text-align: left;
+    color: #b00020;
+    font-weight: bold;
+}
