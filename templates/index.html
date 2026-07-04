@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>NutriTrack Cloud</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='design.css') }}">
+</head>
+
+<body>
+    <h1>Welcome to NutriTrack Cloud</h1>
+    <p>Track your meals, calories, protein and body weight.</p>
+
+    {% if edit_index != None %}
+    <form method="POST" action="/update/{{ edit_index }}">
+        {% else %}
+        <form method="POST">
+            {% endif %}
+            <h3>Meal Type</h3>
+
+            <select name="meal_type" required>
+                <option value="Breakfast">Breakfast</option>
+                <option value="Lunch">Lunch</option>
+                <option value="Dinner">Dinner</option>
+                <option value="Snack">Snack</option>
+                <option value="Supper">Supper</option>
+            </select>
+
+            <h3>Food Name</h3>
+            <input type="text" name="food_name" value="{{ record.food_name if record else '' }}" required>
+
+            <h3>Servings</h3>
+            <input type="number" step="0.1" name="servings" required>
+
+            <h3>Calories</h3>
+            <input type="number" name="calories" value="{{ record.calories if record else '' }}" required>
+
+            <h3>Protein (g)</h3>
+            <input type="number" step="0.1" name="protein" value="{{ record.protein if record else '' }}" required>
+
+            <h3>Body Weight (kg)</h3>
+            <input type="number" step="0.1" name="weight" value="{{ record.weight if record else '' }}" <br><br>
+
+            {% if edit_index != None %}
+            <button>Update Record</button>
+            {% else %}
+            <button>Save Record</button>
+            {% endif %}
+        </form>
+
+
+        <h2>Today's Records</h2>
+
+        <table border="1">
+            <tr>
+                <th>Date</th>
+                <th>Meal Type</th>
+                <th>Food Name</th>
+                <th>Servings</th>
+                <th>Calories</th>
+                <th>Protein</th>
+                <th>Weight</th>
+                <th>Action</th>
+            </tr>
+
+            {% for record in records %}
+            <tr>
+                <td>{{ record.date }}</td>
+                <td>{{ record.meal_type }}</td>
+                <td>{{ record.food_name }}</td>
+                <td>{{ record.servings }}</td>
+                <td>{{ record.calories }} kcal</td>
+                <td>{{ record.protein }} g</td>
+                <td>
+                    {% if record.weight %}
+                    {{ record.weight }} kg
+                    {% else %}
+                    -
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="/edit/{{ loop.index0 }}">Edit</a>
+                    |
+                    <a href="/delete/{{ loop.index0 }}">Delete</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+</body>
+
+</html>
