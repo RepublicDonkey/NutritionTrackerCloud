@@ -1,10 +1,7 @@
 from flask import Flask, render_template, request, redirect
 from datetime import date
-import boto3
 
 app = Flask(__name__)
-dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
-table = dynamodb.Table("NutritionRecords")
 
 records = []
 
