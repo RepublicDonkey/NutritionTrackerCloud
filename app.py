@@ -1,8 +1,45 @@
 from flask import Flask, render_template, request, redirect
 from datetime import date
-
+import pymysql
+import os
 
 app = Flask(__name__)
+
+
+def get_db_connection():
+    return pymysql.connect(
+        host="nutrack-rds.cabxutl8lakb.us-east-1.rds.amazonaws.com",
+        user="admin",
+        password=os.environ.get("DB_PASSWORD"),
+        database="nutritrack",
+        cursorclass=pymysql.cursors.DictCursor,
+    )
+
+
+def get_all_records():
+    connection = get_db_connection()
+
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT
+                    id,
+                    DATE_FORMAT(record_date, '%d/%m/%Y') AS date,
+                    meal_type,
+                    food_name,
+                    servings,
+                    calories,
+                    protein,
+                    weight
+                FROM nutrition_records
+                ORDER BY id DESC
+            """)
+            records = cursor.fetchall()
+
+        return records
+
+    finally:
+        connection.close()
 
 
 records = []
@@ -60,41 +97,63 @@ def home():
         errors = validate_record(request.form)
 
         if errors:
+            records = get_all_records()
+
             return render_template(
-                "index.html", records=records, edit_index=None, errors=errors
+                "index.html",
+                records=records,
+                edit_index=None,
+                errors=errors,
             )
 
-        record = {
-            "date": date.today().strftime("%d/%m/%Y"),
-            "meal_type": request.form.get("meal_type", "Breakfast"),
-            "food_name": request.form["food_name"],
-            "servings": request.form["servings"],
-            "calories": request.form["calories"],
-            "protein": request.form["protein"],
-            "weight": request.form.get("weight", ""),
-        }
+        weight = request.form.get("weight", "").strip()
 
-        records.append(record)
+        if weight:
+            weight = float(weight)
+        else:
+            weight = None
+
+        connection = get_db_connection()
+
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    INSERT INTO nutrition_records (
+                        meal_type,
+                        food_name,
+                        servings,
+                        calories,
+                        protein,
+                        weight,
+                        record_date
+                    )
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                    """,
+                    (
+                        request.form.get("meal_type", "Breakfast"),
+                        request.form["food_name"].strip(),
+                        float(request.form["servings"]),
+                        float(request.form["calories"]),
+                        float(request.form["protein"]),
+                        weight,
+                        date.today(),
+                    ),
+                )
+
+            connection.commit()
+
+        finally:
+            connection.close()
+
         return redirect("/")
 
-    return render_template("index.html", records=records, edit_index=None)
+    records = get_all_records()
 
-
-@app.route("/delete/<int:index>")
-def delete_record(index):
-    if 0 <= index < len(records):
-        records.pop(index)
-    return redirect("/")
-
-
-@app.route("/edit/<int:index>")
-def edit_record(index):
-    if index < 0 or index >= len(records):
-        return redirect("/")
-
-    record = records[index]
     return render_template(
-        "index.html", records=records, record=record, edit_index=index
+        "index.html",
+        records=records,
+        edit_index=None,
     )
 
 
