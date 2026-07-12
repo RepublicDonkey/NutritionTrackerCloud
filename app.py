@@ -21,7 +21,8 @@ def get_all_records():
 
     try:
         with connection.cursor() as cursor:
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT
                     id,
                     DATE_FORMAT(record_date, '%d/%m/%Y') AS date,
@@ -33,23 +34,46 @@ def get_all_records():
                     weight
                 FROM nutrition_records
                 ORDER BY id DESC
-            """)
-            records = cursor.fetchall()
+                """
+            )
 
-        return records
+            return cursor.fetchall()
 
     finally:
         connection.close()
 
 
-records = []
+def get_record_by_id(record_id):
+    connection = get_db_connection()
+
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT
+                    id,
+                    DATE_FORMAT(record_date, '%d/%m/%Y') AS date,
+                    meal_type,
+                    food_name,
+                    servings,
+                    calories,
+                    protein,
+                    weight
+                FROM nutrition_records
+                WHERE id = %s
+                """,
+                (record_id,),
+            )
+
+            return cursor.fetchone()
+
+    finally:
+        connection.close()
 
 
 def validate_record(form):
-
     errors = []
 
-    meal_type = form.get("meal_type", "Breakfast").strip()
     food_name = form.get("food_name", "").strip()
     servings = form.get("servings", "").strip()
     calories = form.get("calories", "").strip()
@@ -60,31 +84,39 @@ def validate_record(form):
         errors.append("Food name is required.")
 
     try:
-        servings = float(servings)
-        if servings <= 0 or servings > 10:
+        servings_value = float(servings)
+
+        if servings_value <= 0 or servings_value > 10:
             errors.append("Servings must be between 1 and 10.")
+
     except ValueError:
         errors.append("Servings must be a valid number.")
 
     try:
-        calories = float(calories)
-        if calories <= 0 or calories > 3000:
+        calories_value = float(calories)
+
+        if calories_value <= 0 or calories_value > 3000:
             errors.append("Calories must be between 1 and 3000 kcal.")
+
     except ValueError:
         errors.append("Calories must be a valid number.")
 
     try:
-        protein = float(protein)
-        if protein < 0 or protein > 300:
+        protein_value = float(protein)
+
+        if protein_value < 0 or protein_value > 300:
             errors.append("Protein must be between 0 and 300 g.")
+
     except ValueError:
         errors.append("Protein must be a valid number.")
 
     if weight:
         try:
-            weight = float(weight)
-            if weight < 30 or weight > 250:
+            weight_value = float(weight)
+
+            if weight_value < 30 or weight_value > 250:
                 errors.append("Weight must be between 30 and 250 kg.")
+
         except ValueError:
             errors.append("Weight must be a valid number.")
 
@@ -107,11 +139,7 @@ def home():
             )
 
         weight = request.form.get("weight", "").strip()
-
-        if weight:
-            weight = float(weight)
-        else:
-            weight = None
+        weight = float(weight) if weight else None
 
         connection = get_db_connection()
 
@@ -157,28 +185,110 @@ def home():
     )
 
 
-@app.route("/update/<int:index>", methods=["POST"])
-def update_record(index):
-    if index < 0 or index >= len(records):
+@app.route("/edit/<int:record_id>")
+def edit_record(record_id):
+    record = get_record_by_id(record_id)
+
+    if record is None:
+        return redirect("/")
+
+    records = get_all_records()
+
+    return render_template(
+        "index.html",
+        records=records,
+        record=record,
+        edit_index=record_id,
+    )
+
+
+@app.route("/update/<int:record_id>", methods=["POST"])
+def update_record(record_id):
+    existing_record = get_record_by_id(record_id)
+
+    if existing_record is None:
         return redirect("/")
 
     errors = validate_record(request.form)
 
     if errors:
+        records = get_all_records()
+
+        record = {
+            "id": record_id,
+            "date": existing_record["date"],
+            "meal_type": request.form.get("meal_type", "Breakfast"),
+            "food_name": request.form.get("food_name", ""),
+            "servings": request.form.get("servings", ""),
+            "calories": request.form.get("calories", ""),
+            "protein": request.form.get("protein", ""),
+            "weight": request.form.get("weight", ""),
+        }
+
         return render_template(
             "index.html",
             records=records,
-            record=records[index],
-            edit_index=index,
+            record=record,
+            edit_index=record_id,
             errors=errors,
         )
 
-    records[index]["food_name"] = request.form["food_name"]
-    records[index]["servings"] = request.form["servings"]
-    records[index]["calories"] = request.form["calories"]
-    records[index]["protein"] = request.form["protein"]
-    records[index]["weight"] = request.form.get("weight", "")
-    records[index]["meal_type"] = request.form.get("meal_type", "Breakfast")
+    weight = request.form.get("weight", "").strip()
+    weight = float(weight) if weight else None
+
+    connection = get_db_connection()
+
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                UPDATE nutrition_records
+                SET
+                    meal_type = %s,
+                    food_name = %s,
+                    servings = %s,
+                    calories = %s,
+                    protein = %s,
+                    weight = %s
+                WHERE id = %s
+                """,
+                (
+                    request.form.get("meal_type", "Breakfast"),
+                    request.form["food_name"].strip(),
+                    float(request.form["servings"]),
+                    float(request.form["calories"]),
+                    float(request.form["protein"]),
+                    weight,
+                    record_id,
+                ),
+            )
+
+        connection.commit()
+
+    finally:
+        connection.close()
+
+    return redirect("/")
+
+
+@app.route("/delete/<int:record_id>")
+def delete_record(record_id):
+    connection = get_db_connection()
+
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                DELETE FROM nutrition_records
+                WHERE id = %s
+                """,
+                (record_id,),
+            )
+
+        connection.commit()
+
+    finally:
+        connection.close()
 
     return redirect("/")
 

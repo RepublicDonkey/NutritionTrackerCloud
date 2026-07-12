@@ -1,12 +1,12 @@
 body {
-    font-family: Arial, sans-serif;
-    background-color: #f4f7fb;
+    font-family: "Segoe UI", sans-serif;
+    background-color: #f9fbff;
     margin: 0;
     padding: 30px;
 }
 
 h1 {
-    color: #1f4e79;
+    color: #0b3965;
     text-align: center;
 }
 
@@ -41,7 +41,7 @@ button {
     background-color: #1f4e79;
     color: white;
     border: none;
-    border-radius: 5px;
+    border-radius: 10px;
     cursor: pointer;
     font-size: 16px;
 }
@@ -59,7 +59,7 @@ table {
     margin: auto;
     border-collapse: collapse;
     background: white;
-    box-shadow: 0px 0px 10px rgba(0,0,0,0.15);
+    box-shadow: 0px 8px 20px rgba(0,0,0,0.8);
 }
 
 th {
