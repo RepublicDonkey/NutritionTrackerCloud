@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NutriTrack Cloud</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='design.css') }}">
+</head>
+<body class="landing-page">
+    <main class="landing-wrapper">
+        <section class="landing-card" aria-labelledby="landing-title">
+            <div class="landing-icon" aria-hidden="true">🥗</div>
+            <h1 id="landing-title">NutriTrack Cloud</h1>
+            <p>
+                Track your meals, calories, protein intake and body weight securely in the cloud.
+            </p>
+
+            <div class="landing-actions" aria-label="Account actions">
+                <a class="landing-button" href="{{ url_for('login') }}">Login</a>
+                <a class="landing-button landing-button-secondary" href="{{ url_for('register') }}">Register</a>
+            </div>
+        </section>
+
+        <section class="landing-features" aria-label="NutriTrack Cloud features">
+            <article class="feature-card">
+                <div class="feature-icon" aria-hidden="true">🥗</div>
+                <h2>Meal Tracking</h2>
+                <p>Track daily meals and nutrition.</p>
+            </article>
+
+            <article class="feature-card">
+                <div class="feature-icon" aria-hidden="true">📊</div>
+                <h2>Nutrition Records</h2>
+                <p>Monitor calories and protein intake.</p>
+            </article>
+
+            <article class="feature-card">
+                <div class="feature-icon" aria-hidden="true">☁️</div>
+                <h2>Cloud Storage</h2>
+                <p>Store your nutrition records using Amazon EC2 and Amazon RDS.</p>
+            </article>
+        </section>
+    </main>
+
+    <footer class="landing-footer">
+        &copy; 2026 NutriTrack Cloud
+    </footer>
+</body>
+</html>
