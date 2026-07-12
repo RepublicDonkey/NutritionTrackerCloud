@@ -25,7 +25,7 @@ def get_all_records():
                 """
                 SELECT
                     id,
-                    DATE_FORMAT(record_date, '%%d/%%m/%%Y') AS date,
+                    DATE_FORMAT(record_date, '%d/%m/%Y') AS date,
                     meal_type,
                     food_name,
                     servings,
@@ -52,7 +52,7 @@ def get_record_by_id(record_id):
                 """
                 SELECT
                     id,
-                    DATE_FORMAT(record_date, '%d/%m/%Y') AS date,
+                    DATE_FORMAT(record_date, '%%d/%%m/%%Y') AS date,
                     meal_type,
                     food_name,
                     servings,
