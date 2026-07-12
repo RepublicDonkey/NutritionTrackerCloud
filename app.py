@@ -1,9 +1,11 @@
-from flask import Flask, render_template, request, redirect
+from flask import Flask, render_template, request, redirect, session, url_for
+from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import date
 import pymysql
 import os
 
 app = Flask(__name__)
+app.secret_key = os.environ.get("SECRET_KEY", "nutritrack-secret-key")
 
 
 def get_db_connection():
@@ -121,6 +123,119 @@ def validate_record(form):
             errors.append("Weight must be a valid number.")
 
     return errors
+
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    errors = []
+
+    if request.method == "POST":
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
+
+        if not username:
+            errors.append("Username is required.")
+
+        if not password:
+            errors.append("Password is required.")
+
+        if not errors:
+            connection = get_db_connection()
+
+            try:
+                with connection.cursor() as cursor:
+                    cursor.execute(
+                        """
+                        SELECT
+                            id,
+                            username,
+                            password_hash
+                        FROM users
+                        WHERE username = %s
+                        """,
+                        (username,),
+                    )
+
+                    user = cursor.fetchone()
+
+            finally:
+                connection.close()
+
+            if user and check_password_hash(user["password_hash"], password):
+                session["user_id"] = user["id"]
+                session["username"] = user["username"]
+
+                return redirect(url_for("home"))
+
+            errors.append("Invalid username or password.")
+
+    return render_template("login.html", errors=errors)
+
+
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    errors = []
+
+    if request.method == "POST":
+        username = request.form.get("username", "").strip()
+        email = request.form.get("email", "").strip()
+        password = request.form.get("password", "")
+        confirm_password = request.form.get("confirm_password", "")
+
+        if not username:
+            errors.append("Username is required.")
+
+        if not email:
+            errors.append("Email is required.")
+
+        if len(password) < 8:
+            errors.append("Password must be at least 8 characters.")
+
+        if password != confirm_password:
+            errors.append("Passwords do not match.")
+
+        if not errors:
+            connection = get_db_connection()
+
+            try:
+                with connection.cursor() as cursor:
+                    cursor.execute(
+                        """
+                        SELECT id
+                        FROM users
+                        WHERE username = %s OR email = %s
+                        """,
+                        (username, email),
+                    )
+
+                    existing_user = cursor.fetchone()
+
+                    if existing_user:
+                        errors.append("Username or email is already registered.")
+                    else:
+                        password_hash = generate_password_hash(password)
+
+                        cursor.execute(
+                            """
+                            INSERT INTO users (
+                                username,
+                                email,
+                                password_hash
+                            )
+                            VALUES (%s, %s, %s)
+                            """,
+                            (username, email, password_hash),
+                        )
+
+                        connection.commit()
+
+            finally:
+                connection.close()
+
+        if not errors:
+            return redirect(url_for("login"))
+
+    return render_template("register.html", errors=errors)
 
 
 @app.route("/", methods=["GET", "POST"])

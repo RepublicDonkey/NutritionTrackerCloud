@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Login - NutriTrack Cloud</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='design.css') }}">
+</head>
+
+<body>
+
+    <h1>Login to NutriTrack Cloud</h1>
+    <p>Enter your account details to continue.</p>
+
+    {% if errors %}
+    <div class="error-box">
+        {% for error in errors %}
+        <p>{{ error }}</p>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <form method="POST">
+
+        <h3>Username</h3>
+        <input
+            type="text"
+            name="username"
+            required
+        >
+
+        <h3>Password</h3>
+        <input
+            type="password"
+            name="password"
+            required
+        >
+
+        <button type="submit">Login</button>
+
+        <p class="form-message">
+            Do not have an account?
+            <a href="{{ url_for('register') }}">Register here</a>
+        </p>
+
+    </form>
+
+</body>
+
+</html>
