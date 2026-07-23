@@ -32,7 +32,7 @@ USERNAME_PATTERN = re.compile(r"^[A-Za-z0-9_.-]{3,30}$")
 EMAIL_PATTERN = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 
 #Connect to the NutriTrack MySQL database
-def get_to_connection():
+def get_db_connection():
     """Create a new connection to the NutriTrack MySQL database."""
     return pymysql.connect(
         host=os.environ.get(
@@ -63,7 +63,7 @@ def login_required(view_function):
 
 
 def get_all_records(user_id):
-    connection = get_to_connection()
+    connection = get_db_connection()
 
     try:
         with connection.cursor() as cursor:
@@ -90,7 +90,7 @@ def get_all_records(user_id):
 
 
 def get_record_by_id(record_id, user_id):
-    connection = get_to_connection()
+    connection = get_db_connection()
 
     try:
         with connection.cursor() as cursor:
@@ -203,7 +203,7 @@ def login():
             errors.append("Password is required.")
 
         if not errors:
-            connection = get_to_connection()
+            connection = get_db_connection()
             try:
                 with connection.cursor() as cursor:
                     cursor.execute(
@@ -262,7 +262,7 @@ def register():
             errors.append("Passwords do not match.")
 
         if not errors:
-            connection = get_to_connection()
+            connection = get_db_connection()
             try:
                 with connection.cursor() as cursor:
                     cursor.execute(
@@ -292,7 +292,7 @@ def register():
                 connection.close()
 
         if not errors:
-            return redirect(url_for("login"))
+            return redirect(url_for("login", registered="1"))
 
     return render_template("register.html", errors=errors)
 
@@ -320,7 +320,7 @@ def home():
             )
 
         values = record_form_values(request.form)
-        connection = get_to_connection()
+        connection = get_db_connection()
 
         try:
             with connection.cursor() as cursor:
@@ -412,7 +412,7 @@ def update_record(record_id):
         )
 
     values = record_form_values(request.form)
-    connection = get_to_connection()
+    connection = get_db_connection()
 
     try:
         with connection.cursor() as cursor:
@@ -451,7 +451,7 @@ def update_record(record_id):
 @app.route("/delete/<int:record_id>", methods=["POST"])
 @login_required
 def delete_record(record_id):
-    connection = get_to_connection()
+    connection = get_db_connection()
 
     try:
         with connection.cursor() as cursor:
