@@ -1,35 +1,49 @@
 const loadingScreen = document.createElement("div");
+
 loadingScreen.className = "loading-screen";
 loadingScreen.setAttribute("role", "status");
 loadingScreen.setAttribute("aria-live", "polite");
 loadingScreen.setAttribute("aria-hidden", "true");
+
 loadingScreen.innerHTML = `
     <div class="loading-panel">
         <span class="loading-spinner" aria-hidden="true"></span>
         <span>Loading…</span>
     </div>
 `;
+
 document.body.appendChild(loadingScreen);
-//Loading Screen is displayed after 250ms to avoid flickering on fast page loads
+
 let loadingTimer;
 
-function scheduleLoadingScreen() {
+function showLoadingScreen() {
     window.clearTimeout(loadingTimer);
     loadingScreen.classList.add("is-visible");
     loadingScreen.setAttribute("aria-hidden", "false");
 }
 
-// Hides the loading screen and clears the timer if it hasn't been displayed yet
 function hideLoadingScreen() {
     window.clearTimeout(loadingTimer);
     loadingScreen.classList.remove("is-visible");
     loadingScreen.setAttribute("aria-hidden", "true");
 }
 
+
+// Show loading screen when a form is submitted
 document.querySelectorAll("form").forEach((form) => {
-    form.addEventListener("submit", scheduleLoadingScreen);
+    form.addEventListener("submit", (event) => {
+        event.preventDefault();
+
+        showLoadingScreen();
+
+        window.setTimeout(() => {
+            form.submit();
+        }, 500);
+    });
 });
 
+
+// Show loading screen when an internal link is clicked
 document.addEventListener("click", (event) => {
     const link = event.target.closest("a[href]");
 
@@ -48,20 +62,33 @@ document.addEventListener("click", (event) => {
 
     const destination = new URL(link.href, window.location.href);
     const currentPage = new URL(window.location.href);
+
     const isSamePageAnchor =
         destination.pathname === currentPage.pathname &&
         destination.search === currentPage.search &&
         destination.hash;
 
     if (destination.origin === currentPage.origin && !isSamePageAnchor) {
-        scheduleLoadingScreen();
+        event.preventDefault();
+
+        showLoadingScreen();
+
+        window.setTimeout(() => {
+            window.location.href = destination.href;
+        }, 500);
     }
 });
-// Hide the loading screen when the page is shown (including when navigating back to it)
+
+
+// Hide loading screen when the page loads or browser back is used
 window.addEventListener("pageshow", hideLoadingScreen);
 
+
+// Password visibility toggle
 document.querySelectorAll("[data-password-toggle]").forEach((toggle) => {
-    const passwordField = document.getElementById(toggle.dataset.passwordToggle);
+    const passwordField = document.getElementById(
+        toggle.dataset.passwordToggle,
+    );
 
     if (!passwordField) {
         return;
@@ -73,14 +100,18 @@ document.querySelectorAll("[data-password-toggle]").forEach((toggle) => {
         passwordField.type = showPassword ? "text" : "password";
         toggle.classList.toggle("is-visible", showPassword);
         toggle.setAttribute("aria-pressed", String(showPassword));
+
         toggle.setAttribute(
             "aria-label",
             showPassword ? "Hide password" : "Show password",
         );
+
         passwordField.focus({ preventScroll: true });
     });
 });
 
+
+// Registration success notification
 const successNotification = document.querySelector(
     "[data-success-notification]",
 );
@@ -97,12 +128,19 @@ if (successNotification) {
     function dismissNotification() {
         window.clearTimeout(notificationTimer);
         successNotification.classList.add("is-hiding");
-        window.setTimeout(() => successNotification.remove(), 180);
+
+        window.setTimeout(() => {
+            successNotification.remove();
+        }, 180);
     }
 
-    successNotification
-        .querySelector("[data-notification-close]")
-        .addEventListener("click", dismissNotification);
+    const closeButton = successNotification.querySelector(
+        "[data-notification-close]",
+    );
+
+    if (closeButton) {
+        closeButton.addEventListener("click", dismissNotification);
+    }
 
     notificationTimer = window.setTimeout(dismissNotification, 5000);
 }
