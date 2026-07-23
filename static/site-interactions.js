@@ -15,11 +15,10 @@ let loadingTimer;
 
 function scheduleLoadingScreen() {
     window.clearTimeout(loadingTimer);
-    loadingTimer = window.setTimeout(() => {
-        loadingScreen.classList.add("is-visible");
-        loadingScreen.setAttribute("aria-hidden", "false");
-    }, 250);
+    loadingScreen.classList.add("is-visible");
+    loadingScreen.setAttribute("aria-hidden", "false");
 }
+
 // Hides the loading screen and clears the timer if it hasn't been displayed yet
 function hideLoadingScreen() {
     window.clearTimeout(loadingTimer);
