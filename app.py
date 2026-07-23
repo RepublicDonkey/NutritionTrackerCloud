@@ -9,25 +9,30 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 app = Flask(__name__)
 
-# Never keep a predictable secret key in production.
-secret_key = os.environ.get("SECRET_KEY")
-if not secret_key:
+# Application configuration
+
+# Read the secret key from EC2 environment
+app_secret_key = os.environ.get("SECRET_KEY")
+
+if not app_secret_key:
     raise RuntimeError("SECRET_KEY environment variable is not set.")
 
+# Configure session settings for security and sessions set to expire after 2 hours of inactivity
 app.config.update(
-    SECRET_KEY=secret_key,
+    SECRET_KEY=app_secret_key,
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE="Lax",
     SESSION_COOKIE_SECURE=os.environ.get("FLASK_ENV") == "production",
     PERMANENT_SESSION_LIFETIME=timedelta(hours=2),
 )
 
+#Define the meal types and the input format for validation of username and email
 MEAL_TYPES = {"Breakfast", "Lunch", "Dinner", "Snack","Supper"}
 USERNAME_PATTERN = re.compile(r"^[A-Za-z0-9_.-]{3,30}$")
 EMAIL_PATTERN = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 
-
-def get_db_connection():
+#Connect to the NutriTrack MySQL database
+def get_to_connection():
     """Create a new connection to the NutriTrack MySQL database."""
     return pymysql.connect(
         host=os.environ.get(
@@ -49,16 +54,16 @@ def login_required(view_function):
     """Redirect unauthenticated visitors to the login page."""
 
     @wraps(view_function)
-    def wrapped_view(*args, **kwargs):
+    def route(*args, **kwargs):
         if "user_id" not in session:
             return redirect(url_for("login"))
         return view_function(*args, **kwargs)
 
-    return wrapped_view
+    return route
 
 
 def get_all_records(user_id):
-    connection = get_db_connection()
+    connection = get_to_connection()
 
     try:
         with connection.cursor() as cursor:
@@ -85,7 +90,7 @@ def get_all_records(user_id):
 
 
 def get_record_by_id(record_id, user_id):
-    connection = get_db_connection()
+    connection = get_to_connection()
 
     try:
         with connection.cursor() as cursor:
@@ -198,7 +203,7 @@ def login():
             errors.append("Password is required.")
 
         if not errors:
-            connection = get_db_connection()
+            connection = get_to_connection()
             try:
                 with connection.cursor() as cursor:
                     cursor.execute(
@@ -257,7 +262,7 @@ def register():
             errors.append("Passwords do not match.")
 
         if not errors:
-            connection = get_db_connection()
+            connection = get_to_connection()
             try:
                 with connection.cursor() as cursor:
                     cursor.execute(
@@ -315,7 +320,7 @@ def home():
             )
 
         values = record_form_values(request.form)
-        connection = get_db_connection()
+        connection = get_to_connection()
 
         try:
             with connection.cursor() as cursor:
@@ -407,7 +412,7 @@ def update_record(record_id):
         )
 
     values = record_form_values(request.form)
-    connection = get_db_connection()
+    connection = get_to_connection()
 
     try:
         with connection.cursor() as cursor:
@@ -446,7 +451,7 @@ def update_record(record_id):
 @app.route("/delete/<int:record_id>", methods=["POST"])
 @login_required
 def delete_record(record_id):
-    connection = get_db_connection()
+    connection = get_to_connection()
 
     try:
         with connection.cursor() as cursor:
